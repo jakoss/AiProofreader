@@ -1,0 +1,12 @@
+{
+  "name": "ai-proofreader",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npm --prefix proofreader-web run dev",
+    "build": "npm --prefix proofreader-web run build",
+    "start": "npm --prefix proofreader-web run start",
+    "aspire": "aspire run",
+    "typecheck": "npm --prefix proofreader-web run typecheck"
+  }
+}
