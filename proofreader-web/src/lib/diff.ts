@@ -39,7 +39,7 @@ export function buildChangeSegments(original: string, corrected: string): Change
     segments.push({ type: 'equal', text: current.value })
   }
 
-  return mergeAdjacentSegments(segments)
+  return mergeSplitReplacements(mergeAdjacentSegments(segments))
 }
 
 function mergeAdjacentSegments(segments: ChangeSegment[]): ChangeSegment[] {
@@ -78,4 +78,52 @@ function mergeAdjacentSegments(segments: ChangeSegment[]): ChangeSegment[] {
   }
 
   return merged
+}
+
+function mergeSplitReplacements(segments: ChangeSegment[]): ChangeSegment[] {
+  const merged: ChangeSegment[] = []
+
+  for (let index = 0; index < segments.length; index += 1) {
+    const current = segments[index]
+    const next = segments[index + 1]
+    const following = segments[index + 2]
+
+    if (
+      current.type === 'replace' &&
+      next?.type === 'equal' &&
+      isWhitespaceOnly(next.text) &&
+      following?.type === 'insert'
+    ) {
+      merged.push({
+        type: 'replace',
+        before: current.before,
+        after: current.after + next.text + following.text,
+      })
+      index += 2
+      continue
+    }
+
+    if (
+      current.type === 'delete' &&
+      next?.type === 'equal' &&
+      isWhitespaceOnly(next.text) &&
+      following?.type === 'replace'
+    ) {
+      merged.push({
+        type: 'replace',
+        before: current.text + next.text + following.before,
+        after: following.after,
+      })
+      index += 2
+      continue
+    }
+
+    merged.push(current)
+  }
+
+  return merged
+}
+
+function isWhitespaceOnly(text: string) {
+  return text.length > 0 && text.trim() === ''
 }

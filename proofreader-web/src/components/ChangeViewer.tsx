@@ -59,14 +59,14 @@ export function ChangeViewer({ segments, view }: ChangeViewerProps) {
         if (segment.type === 'insert') {
           return (
             <span key={index} className="change-token added">
-              <span aria-hidden="true">-&gt;</span> {segment.text}
+              {segment.text}
             </span>
           )
         }
 
         return (
           <span key={index} className="change-token removed">
-            {segment.text} <span aria-hidden="true">-&gt;</span>
+            {segment.text}
           </span>
         )
       })}
