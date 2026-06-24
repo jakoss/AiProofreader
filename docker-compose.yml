@@ -5,6 +5,7 @@ services:
       - "3000:3000"
     environment:
       MODEL_PROVIDER_BASE_URL: http://bifrost-gateway:8080/v1
+      MODEL_PROVIDER_MODEL: ${MODEL_PROVIDER_MODEL:?Set MODEL_PROVIDER_MODEL to the model id to use}
       NODE_ENV: production
     depends_on:
       - bifrost-gateway

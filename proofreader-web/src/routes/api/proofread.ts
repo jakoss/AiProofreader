@@ -5,7 +5,6 @@ import { modeIds, type ProofreadMode } from '../../lib/modes'
 type ProofreadRequest = {
   text?: unknown
   mode?: unknown
-  model?: unknown
 }
 
 export const Route = createFileRoute('/api/proofread')({
@@ -32,7 +31,6 @@ export const Route = createFileRoute('/api/proofread')({
           const correctedText = await proofreadWithModelProvider({
             text: body.text as string,
             mode: body.mode as ProofreadMode,
-            model: body.model as string,
           })
 
           return Response.json({ correctedText })
@@ -50,10 +48,6 @@ export const Route = createFileRoute('/api/proofread')({
 function validateBody(body: ProofreadRequest) {
   if (typeof body.text !== 'string' || !body.text.trim()) {
     return 'Text is required.'
-  }
-
-  if (typeof body.model !== 'string' || !body.model.trim()) {
-    return 'Model is required.'
   }
 
   if (typeof body.mode !== 'string' || !modeIds.includes(body.mode as ProofreadMode)) {

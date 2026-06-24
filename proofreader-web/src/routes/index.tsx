@@ -1,10 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Check, Clipboard, Copy, Loader2, RefreshCw, WandSparkles } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { Check, Clipboard, Copy, Loader2, WandSparkles } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { ChangeViewer } from '../components/ChangeViewer'
 import { buildChangeSegments } from '../lib/diff'
 import { proofreadModes, type ProofreadMode } from '../lib/modes'
-import type { ModelInfo, ProofreadResponse } from '../lib/types'
+import type { ProofreadResponse } from '../lib/types'
 
 export const Route = createFileRoute('/')({
   component: ProofreaderApp,
@@ -15,41 +15,11 @@ type ResultView = 'changes' | 'rawDiff'
 function ProofreaderApp() {
   const [text, setText] = useState('')
   const [mode, setMode] = useState<ProofreadMode>('typos')
-  const [model, setModel] = useState('')
-  const [models, setModels] = useState<ModelInfo[]>([])
-  const [modelsLoading, setModelsLoading] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [modelsError, setModelsError] = useState('')
   const [correctedText, setCorrectedText] = useState('')
   const [resultView, setResultView] = useState<ResultView>('changes')
   const [copied, setCopied] = useState(false)
-
-  useEffect(() => {
-    void loadModels()
-  }, [])
-
-  async function loadModels() {
-    setModelsLoading(true)
-    setModelsError('')
-
-    try {
-      const response = await fetch('/api/models')
-      const payload = await response.json()
-
-      if (!response.ok) {
-        throw new Error(payload.error ?? 'Unable to load models.')
-      }
-
-      const nextModels = Array.isArray(payload.models) ? payload.models : []
-      setModels(nextModels)
-      setModel((current) => current || nextModels[0]?.id || '')
-    } catch (nextError) {
-      setModelsError(getMessage(nextError, 'Unable to load models from model provider.'))
-    } finally {
-      setModelsLoading(false)
-    }
-  }
 
   async function handleProofread() {
     setError('')
@@ -57,11 +27,6 @@ function ProofreaderApp() {
 
     if (!text.trim()) {
       setError('Enter text to proofread.')
-      return
-    }
-
-    if (!model) {
-      setError('Select a model before proofreading.')
       return
     }
 
@@ -73,7 +38,7 @@ function ProofreaderApp() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text, mode, model }),
+        body: JSON.stringify({ text, mode }),
       })
       const payload = (await response.json()) as ProofreadResponse & { error?: string }
 
@@ -116,16 +81,6 @@ function ProofreaderApp() {
           <h1>Proofreader</h1>
           <p>Clean up emails, docs, specs, and business messages with your configured LLMs.</p>
         </div>
-        <button
-          className="icon-button"
-          type="button"
-          onClick={loadModels}
-          disabled={modelsLoading}
-          title="Refresh models"
-          aria-label="Refresh models"
-        >
-          <RefreshCw size={18} />
-        </button>
       </header>
 
       <section className="workspace" aria-label="Proofreader workspace">
@@ -165,37 +120,18 @@ function ProofreaderApp() {
               <p className="mode-description">{activeMode?.description}</p>
             </div>
 
-            <div className="field-grid">
-              <label className="field">
-                <span>Model</span>
-                <select
-                  value={model}
-                  onChange={(event) => setModel(event.target.value)}
-                  disabled={modelsLoading || models.length === 0}
-                >
-                  <option value="">
-                    {modelsLoading ? 'Loading models...' : 'Select a model'}
-                  </option>
-                  {models.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
+            <div className="action-row">
               <button
                 className="primary-action"
                 type="button"
                 onClick={handleProofread}
-                disabled={loading || modelsLoading}
+                disabled={loading}
               >
                 {loading ? <Loader2 className="spin" size={18} /> : <WandSparkles size={18} />}
                 Proofread
               </button>
             </div>
 
-            {modelsError ? <p className="status-error">{modelsError}</p> : null}
             {error ? <p className="status-error">{error}</p> : null}
           </div>
         </section>
@@ -245,7 +181,7 @@ function ProofreaderApp() {
             ) : (
               <div className="empty-state">
                 <Clipboard size={24} />
-                Enter text, choose a mode and model, then run proofreading.
+                Enter text, choose a mode, then run proofreading.
               </div>
             )}
           </div>

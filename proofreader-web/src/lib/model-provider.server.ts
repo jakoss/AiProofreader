@@ -1,12 +1,6 @@
 import { promptTemplates, type ProofreadMode } from './modes'
-import type { ModelInfo } from './types'
 
 const DEFAULT_MODEL_PROVIDER_BASE_URL = 'http://localhost:8080/v1'
-
-type OpenAiModelResponse = {
-  data?: Array<{ id?: string; name?: string }>
-  models?: Array<{ id?: string; name?: string }>
-}
 
 type ChatCompletionResponse = {
   choices?: Array<{
@@ -20,33 +14,9 @@ type ChatCompletionResponse = {
   }
 }
 
-export async function fetchModelProviderModels(): Promise<ModelInfo[]> {
-  const response = await fetchFromModelProvider('/models')
-
-  if (!response.ok) {
-    throw new Error(`Model provider models request failed with status ${response.status}.`)
-  }
-
-  const payload = (await response.json()) as OpenAiModelResponse
-  const rawModels = Array.isArray(payload.data) ? payload.data : payload.models
-
-  if (!Array.isArray(rawModels)) {
-    throw new Error('Model provider returned an invalid models response.')
-  }
-
-  return rawModels
-    .map((model) => {
-      const id = typeof model.id === 'string' ? model.id : ''
-      const name = typeof model.name === 'string' ? model.name : id
-      return { id, name }
-    })
-    .filter((model) => model.id)
-}
-
 export async function proofreadWithModelProvider(input: {
   text: string
   mode: ProofreadMode
-  model: string
 }) {
   const prompt = promptTemplates[input.mode].replace('{{text}}', input.text)
 
@@ -56,7 +26,7 @@ export async function proofreadWithModelProvider(input: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: input.model,
+      model: getModelProviderModel(),
       messages: [
         {
           role: 'user',
@@ -89,6 +59,16 @@ function getModelProviderBaseUrl() {
     process.env.MODEL_PROVIDER_BASE_URL ??
     DEFAULT_MODEL_PROVIDER_BASE_URL
   ).replace(/\/$/, '')
+}
+
+function getModelProviderModel() {
+  const model = process.env.MODEL_PROVIDER_MODEL?.trim()
+
+  if (!model) {
+    throw new Error('MODEL_PROVIDER_MODEL is not configured.')
+  }
+
+  return model
 }
 
 async function fetchFromModelProvider(path: string, init?: RequestInit) {

@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiProofreadRouteImport } from './routes/api/proofread'
-import { Route as ApiModelsRouteImport } from './routes/api/models'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -23,39 +22,29 @@ const ApiProofreadRoute = ApiProofreadRouteImport.update({
   path: '/api/proofread',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiModelsRoute = ApiModelsRouteImport.update({
-  id: '/api/models',
-  path: '/api/models',
-  getParentRoute: () => rootRouteImport,
-} as any)
-
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/api/models': typeof ApiModelsRoute
   '/api/proofread': typeof ApiProofreadRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/api/models': typeof ApiModelsRoute
   '/api/proofread': typeof ApiProofreadRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/api/models': typeof ApiModelsRoute
   '/api/proofread': typeof ApiProofreadRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/models' | '/api/proofread'
+  fullPaths: '/' | '/api/proofread'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/models' | '/api/proofread'
-  id: '__root__' | '/' | '/api/models' | '/api/proofread'
+  to: '/' | '/api/proofread'
+  id: '__root__' | '/' | '/api/proofread'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ApiModelsRoute: typeof ApiModelsRoute
   ApiProofreadRoute: typeof ApiProofreadRoute
 }
 
@@ -75,19 +64,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProofreadRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/models': {
-      id: '/api/models'
-      path: '/api/models'
-      fullPath: '/api/models'
-      preLoaderRoute: typeof ApiModelsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ApiModelsRoute: ApiModelsRoute,
   ApiProofreadRoute: ApiProofreadRoute,
 }
 export const routeTree = rootRouteImport
