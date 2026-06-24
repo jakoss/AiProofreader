@@ -6,7 +6,15 @@ export type ChangeSegment =
   | { type: 'delete'; text: string }
   | { type: 'replace'; before: string; after: string }
 
-export function buildChangeSegments(original: string, corrected: string): ChangeSegment[] {
+type BuildChangeSegmentsOptions = {
+  streaming?: boolean
+}
+
+export function buildChangeSegments(
+  original: string,
+  corrected: string,
+  options: BuildChangeSegmentsOptions = {},
+): ChangeSegment[] {
   if (!corrected) return []
 
   const parts = diffWordsWithSpace(original, corrected)
@@ -39,7 +47,8 @@ export function buildChangeSegments(original: string, corrected: string): Change
     segments.push({ type: 'equal', text: current.value })
   }
 
-  return mergeSplitReplacements(mergeAdjacentSegments(segments))
+  const merged = mergeSplitReplacements(mergeAdjacentSegments(segments))
+  return options.streaming ? stripTrailingDeletes(merged) : merged
 }
 
 function mergeAdjacentSegments(segments: ChangeSegment[]): ChangeSegment[] {
@@ -126,4 +135,14 @@ function mergeSplitReplacements(segments: ChangeSegment[]): ChangeSegment[] {
 
 function isWhitespaceOnly(text: string) {
   return text.length > 0 && text.trim() === ''
+}
+
+function stripTrailingDeletes(segments: ChangeSegment[]) {
+  let lastIncludedIndex = segments.length - 1
+
+  while (lastIncludedIndex >= 0 && segments[lastIncludedIndex].type === 'delete') {
+    lastIncludedIndex -= 1
+  }
+
+  return segments.slice(0, lastIncludedIndex + 1)
 }

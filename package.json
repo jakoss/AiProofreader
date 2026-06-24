@@ -6,7 +6,13 @@
     "dev": "npm --prefix proofreader-web run dev",
     "build": "npm --prefix proofreader-web run build",
     "start": "npm --prefix proofreader-web run start",
-    "aspire": "aspire run",
+    "aspire": "TMPDIR=/tmp TMP=/tmp TEMP=/tmp aspire run",
     "typecheck": "npm --prefix proofreader-web run typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.2",
+    "tsx": "^4.22.4",
+    "typescript": "^5.9.3",
+    "vscode-jsonrpc": "^8.2.1"
   }
 }

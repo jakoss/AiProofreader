@@ -1,10 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { proofreadWithModelProvider } from '../../lib/model-provider.server'
+import {
+  proofreadWithModelProvider,
+  streamProofreadWithModelProvider,
+} from '../../lib/model-provider.server'
 import { modeIds, type ProofreadMode } from '../../lib/modes'
+import type { ProofreadStreamEvent } from '../../lib/types'
 
 type ProofreadRequest = {
   text?: unknown
   mode?: unknown
+  stream?: unknown
 }
 
 export const Route = createFileRoute('/api/proofread')({
@@ -28,6 +33,14 @@ export const Route = createFileRoute('/api/proofread')({
         }
 
         try {
+          if (body.stream === true) {
+            return streamProofreadResponse({
+              text: body.text as string,
+              mode: body.mode as ProofreadMode,
+              signal: request.signal,
+            })
+          }
+
           const correctedText = await proofreadWithModelProvider({
             text: body.text as string,
             mode: body.mode as ProofreadMode,
@@ -54,9 +67,54 @@ function validateBody(body: ProofreadRequest) {
     return 'Mode must be typos, improve, or lightRewrite.'
   }
 
+  if (typeof body.stream !== 'undefined' && typeof body.stream !== 'boolean') {
+    return 'Stream must be true or false.'
+  }
+
   return ''
 }
 
 function getMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback
+}
+
+function streamProofreadResponse(input: {
+  text: string
+  mode: ProofreadMode
+  signal: AbortSignal
+}) {
+  const encoder = new TextEncoder()
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      let correctedText = ''
+
+      function send(event: ProofreadStreamEvent) {
+        controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`))
+      }
+
+      try {
+        for await (const delta of streamProofreadWithModelProvider(input)) {
+          correctedText += delta
+          send({ type: 'delta', text: delta })
+        }
+
+        send({ type: 'done', correctedText: correctedText.trim() })
+      } catch (error) {
+        if (!input.signal.aborted) {
+          send({ type: 'error', error: getMessage(error, 'Proofreading failed.') })
+        }
+      } finally {
+        controller.close()
+      }
+    },
+  })
+
+  return new Response(stream, {
+    headers: {
+      'Cache-Control': 'no-cache, no-transform',
+      'Content-Type': 'application/x-ndjson; charset=utf-8',
+      'X-Accel-Buffering': 'no',
+    },
+  })
 }

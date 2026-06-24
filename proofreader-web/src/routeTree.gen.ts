@@ -22,6 +22,7 @@ const ApiProofreadRoute = ApiProofreadRouteImport.update({
   path: '/api/proofread',
   getParentRoute: () => rootRouteImport,
 } as any)
+
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/proofread': typeof ApiProofreadRoute
