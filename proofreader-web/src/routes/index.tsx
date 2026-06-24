@@ -45,7 +45,7 @@ function ProofreaderApp() {
       setModels(nextModels)
       setModel((current) => current || nextModels[0]?.id || '')
     } catch (nextError) {
-      setModelsError(getMessage(nextError, 'Unable to load models from Bifrost.'))
+      setModelsError(getMessage(nextError, 'Unable to load models from model provider.'))
     } finally {
       setModelsLoading(false)
     }
@@ -82,7 +82,7 @@ function ProofreaderApp() {
       }
 
       if (typeof payload.correctedText !== 'string') {
-        throw new Error('Bifrost returned an invalid proofreading response.')
+        throw new Error('Model provider returned an invalid proofreading response.')
       }
 
       setCorrectedText(payload.correctedText)
@@ -114,7 +114,7 @@ function ProofreaderApp() {
       <header className="topbar">
         <div>
           <h1>Proofreader</h1>
-          <p>Clean up emails, docs, specs, and business messages with Bifrost-backed LLMs.</p>
+          <p>Clean up emails, docs, specs, and business messages with your configured LLMs.</p>
         </div>
         <button
           className="icon-button"

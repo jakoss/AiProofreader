@@ -1,7 +1,7 @@
 import { promptTemplates, type ProofreadMode } from './modes'
 import type { ModelInfo } from './types'
 
-const DEFAULT_BIFROST_BASE_URL = 'http://localhost:8080/v1'
+const DEFAULT_MODEL_PROVIDER_BASE_URL = 'http://localhost:8080/v1'
 
 type OpenAiModelResponse = {
   data?: Array<{ id?: string; name?: string }>
@@ -20,18 +20,18 @@ type ChatCompletionResponse = {
   }
 }
 
-export async function fetchBifrostModels(): Promise<ModelInfo[]> {
-  const response = await fetchFromBifrost('/models')
+export async function fetchModelProviderModels(): Promise<ModelInfo[]> {
+  const response = await fetchFromModelProvider('/models')
 
   if (!response.ok) {
-    throw new Error(`Bifrost models request failed with status ${response.status}.`)
+    throw new Error(`Model provider models request failed with status ${response.status}.`)
   }
 
   const payload = (await response.json()) as OpenAiModelResponse
   const rawModels = Array.isArray(payload.data) ? payload.data : payload.models
 
   if (!Array.isArray(rawModels)) {
-    throw new Error('Bifrost returned an invalid models response.')
+    throw new Error('Model provider returned an invalid models response.')
   }
 
   return rawModels
@@ -43,14 +43,14 @@ export async function fetchBifrostModels(): Promise<ModelInfo[]> {
     .filter((model) => model.id)
 }
 
-export async function proofreadWithBifrost(input: {
+export async function proofreadWithModelProvider(input: {
   text: string
   mode: ProofreadMode
   model: string
 }) {
   const prompt = promptTemplates[input.mode].replace('{{text}}', input.text)
 
-  const response = await fetchFromBifrost('/chat/completions', {
+  const response = await fetchFromModelProvider('/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -78,21 +78,27 @@ export async function proofreadWithBifrost(input: {
     payload?.choices?.[0]?.message?.content ?? payload?.choices?.[0]?.text ?? ''
 
   if (!correctedText || typeof correctedText !== 'string') {
-    throw new Error('Bifrost returned an invalid proofreading response.')
+    throw new Error('Model provider returned an invalid proofreading response.')
   }
 
   return correctedText.trim()
 }
 
-function getBifrostBaseUrl() {
-  return (process.env.BIFROST_BASE_URL ?? DEFAULT_BIFROST_BASE_URL).replace(/\/$/, '')
+function getModelProviderBaseUrl() {
+  return (
+    process.env.MODEL_PROVIDER_BASE_URL ??
+    DEFAULT_MODEL_PROVIDER_BASE_URL
+  ).replace(/\/$/, '')
 }
 
-async function fetchFromBifrost(path: string, init?: RequestInit) {
+async function fetchFromModelProvider(path: string, init?: RequestInit) {
   try {
-    return await fetch(`${getBifrostBaseUrl()}${path}`, init)
+    return await fetch(`${getModelProviderBaseUrl()}${path}`, {
+      ...init,
+      headers: getModelProviderHeaders(init?.headers),
+    })
   } catch {
-    throw new Error('Bifrost is unavailable or the model provider did not respond.')
+    throw new Error('Model provider is unavailable or did not respond.')
   }
 }
 
@@ -102,8 +108,19 @@ function mapGatewayError(status: number) {
   }
 
   if (status === 502 || status === 503 || status === 504) {
-    return 'Bifrost is unavailable or the model provider did not respond.'
+    return 'Model provider is unavailable or did not respond.'
   }
 
-  return `Bifrost request failed with status ${status}.`
+  return `Model provider request failed with status ${status}.`
+}
+
+function getModelProviderHeaders(headers?: HeadersInit) {
+  const requestHeaders = new Headers(headers)
+  const authorizationHeader = process.env.MODEL_PROVIDER_AUTHORIZATION_HEADER
+
+  if (authorizationHeader) {
+    requestHeaders.set('Authorization', authorizationHeader)
+  }
+
+  return requestHeaders
 }

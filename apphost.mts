@@ -19,7 +19,7 @@ await builder
     runScriptName: 'dev',
   })
   .publishAsNodeServer('server.mjs', { outputPath: '.' })
-  .withEnvironment('BIFROST_BASE_URL', `${bifrostEndpoint}/v1`)
+  .withEnvironment('MODEL_PROVIDER_BASE_URL', `${bifrostEndpoint}/v1`)
   .withExternalHttpEndpoints()
   .waitFor(bifrost)
 

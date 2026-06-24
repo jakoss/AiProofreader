@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { proofreadWithBifrost } from '../../lib/bifrost.server'
+import { proofreadWithModelProvider } from '../../lib/model-provider.server'
 import { modeIds, type ProofreadMode } from '../../lib/modes'
 
 type ProofreadRequest = {
@@ -29,7 +29,7 @@ export const Route = createFileRoute('/api/proofread')({
         }
 
         try {
-          const correctedText = await proofreadWithBifrost({
+          const correctedText = await proofreadWithModelProvider({
             text: body.text as string,
             mode: body.mode as ProofreadMode,
             model: body.model as string,

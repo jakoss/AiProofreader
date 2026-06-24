@@ -40,7 +40,8 @@ docker compose up --build
 `proofreader-web` reads:
 
 ```env
-BIFROST_BASE_URL=http://bifrost-gateway:8080/v1
+MODEL_PROVIDER_BASE_URL=http://bifrost-gateway:8080/v1
+MODEL_PROVIDER_AUTHORIZATION_HEADER=
 ```
 
-Provider credentials stay in Bifrost configuration. The web app only talks to Bifrost through OpenAI-compatible `/models` and `/chat/completions` endpoints.
+Provider credentials can stay in Bifrost configuration. If you point the app directly at a provider, set `MODEL_PROVIDER_AUTHORIZATION_HEADER` to the complete authorization header value, such as `Bearer <token>`. The web app talks to OpenAI-compatible `/models` and `/chat/completions` endpoints.
